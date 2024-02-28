@@ -59,6 +59,7 @@ if __name__ == "__main__":
             print(e)
             error_count += 1
             if error_count > MAX_ERROR_COUNT:
+                notification.send_message("Quitting due to too many errors")
                 break
 
         time.sleep(TIMEOUT)
