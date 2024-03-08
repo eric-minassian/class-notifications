@@ -15,13 +15,26 @@ MAX_ERROR_COUNT = 5
 
 @dataclass
 class CourseStatus:
-    enr: int
+    instructor: str
+    modality: str
+    time: str
     limit: int
-    status: str
+    enr: int
     waitlist: str
+    rstr: str
+    status: str
 
     def __str__(self):
-        return f"Enr: {self.enr}, Limit: {self.limit}, Status: {self.status}, Waitlist: {self.waitlist}"
+        return f"""
+        Instructor: {self.instructor}
+        Modality: {self.modality}
+        Time: {self.time}
+        Limit: {self.limit}
+        Enr: {self.enr}
+        Waitlist: {self.waitlist}
+        Rstr: {self.rstr}
+        Status: {self.status}
+        """
 
 
 def get_status(year_term: str, course_code: str) -> CourseStatus:
@@ -39,12 +52,16 @@ def get_status(year_term: str, course_code: str) -> CourseStatus:
         for tr in soup.find_all("tr", valign="top", bgcolor="#FFFFCC"):
             data = tr.find_all("td")
 
-            enr = int(data[9].text)
-            limit = int(data[8].text)
-            waitlist = data[10].text
-            status = data[-1].text
-
-            return CourseStatus(enr, limit, status, waitlist)
+            return CourseStatus(
+                instructor=data[4].text.strip(),
+                modality=data[5].text.strip(),
+                time=data[6].text.strip(),
+                limit=int(data[8].text),
+                enr=int(data[9].text),
+                waitlist=data[10].text.strip(),
+                rstr=data[13].text.strip(),
+                status=data[-1].text.strip(),
+            )
 
     raise Exception("Failed to get status")
 
