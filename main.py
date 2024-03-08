@@ -1,5 +1,6 @@
 import os
 import time
+from dataclasses import dataclass
 
 import requests
 from bs4 import BeautifulSoup
@@ -12,7 +13,18 @@ TIMEOUT = 30
 MAX_ERROR_COUNT = 5
 
 
-def get_status(year_term: str, course_code: str):
+@dataclass
+class CourseStatus:
+    enr: int
+    limit: int
+    status: str
+    waitlist: str
+
+    def __str__(self):
+        return f"Enr: {self.enr}, Limit: {self.limit}, Status: {self.status}, Waitlist: {self.waitlist}"
+
+
+def get_status(year_term: str, course_code: str) -> CourseStatus:
     response = requests.post(
         URL,
         data={
@@ -25,7 +37,14 @@ def get_status(year_term: str, course_code: str):
         soup = BeautifulSoup(response.text, "html.parser")
 
         for tr in soup.find_all("tr", valign="top", bgcolor="#FFFFCC"):
-            return tr.find_all("td")[-1].text
+            data = tr.find_all("td")
+
+            enr = int(data[9].text)
+            limit = int(data[8].text)
+            waitlist = data[10].text
+            status = data[-1].text
+
+            return CourseStatus(enr, limit, status, waitlist)
 
     raise Exception("Failed to get status")
 
@@ -40,7 +59,7 @@ if __name__ == "__main__":
 
     notification = Notification(app_token, user_key)
 
-    prev = ""
+    prev = None
     error_count = 0
 
     while True:
@@ -49,7 +68,7 @@ if __name__ == "__main__":
             if status != prev:
                 print(status)
 
-                if not notification.send_message(f"Status: {status}"):
+                if not notification.send_message(str(status)):
                     raise Exception("Failed to send message")
 
                 prev = status
